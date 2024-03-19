@@ -1,6 +1,7 @@
 
 import datetime
 import time
+from sys import getsizeof
 import os
 from typing import List, Dict
 import asyncio
@@ -39,13 +40,19 @@ def __extract_message_data(msg) -> Dict:
     return mess_data
 
 
-async def extract_messages(chat_id: int):
-    mes_ids = []
+async def extract_messages(chat_id: int, limit: int = 1000):
     ret = []
-    async for msg in client.iter_messages(chat_id, limit=1000, wait_time=1):
-        mes_ids.append(msg.id)
+    msg_dt, cnt_by_dt, cnt_all = None, 0, 0
+    async for msg in client.iter_messages(chat_id,  wait_time=1, limit=limit):
+        cnt_all += 1
+        cnt_by_dt += 1
+        if msg.date.date() != msg_dt:
+            logging.info(f"got {cnt_by_dt=}/{cnt_all=} messages for {msg_dt}. total size in memory is {getsizeof(ret)} bytes")
+            msg_dt = msg.date.date()
+            cnt_by_dt = 0
         d_i = __extract_message_data(msg)
         ret.append(d_i)
+    logging.info(f"got {cnt_by_dt} messages for {msg_dt}. total size in memory is {getsizeof(ret)} bytes")
     return ret
 
 
@@ -85,8 +92,10 @@ def test_reactions():
 
 async def test_extraction():
     tlg_group_id = -1001688539638
-    xx = await extract_messages(tlg_group_id)
-    print(xx)
+    xx = await extract_messages(chat_id=tlg_group_id, limit=1000000)
+    df = pd.DataFrame.from_dict(xx)
+    df.to_parquet(f'chat{tlg_group_id}.parquet.gzip', compression='gzip')
+    # print(xx)
     
 
 if __name__ == "__main__":
