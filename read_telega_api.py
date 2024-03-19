@@ -11,7 +11,9 @@ import pandas as pd
 from dotenv import load_dotenv
 from telethon import TelegramClient
 from telethon.tl.functions.messages import GetMessagesReactionsRequest
-from telethon.tl.types import ReactionEmoji     
+from telethon.tl.types import ReactionEmoji
+
+partitioning_column = 'msg_month_key'
 
 logging.basicConfig(level=logging.INFO)
 load_dotenv()
@@ -26,8 +28,10 @@ def __extract_message_data(msg) -> Dict:
     col_maps = {
         ("msg_id", lambda mes: mes.id),
         ("user_id", lambda mes: mes.from_id.user_id),
-        ("user_name", lambda mes: mes.sender.first_name),
+        ("user_name", lambda mes: mes.sender.first_name
+         if msg.sender else None),
         ("msg_date", lambda msg: msg.date),
+        (partitioning_column, lambda msg: msg.date.year*100 + msg.date.month),  # key for partitioning
         ("reply_to_msg_id", lambda msg: msg.reply_to.reply_to_msg_id
             if msg.reply_to and msg.reply_to.reply_to_msg_id else None),
         ("msg_text", lambda msg: msg.message),
@@ -94,7 +98,7 @@ async def test_extraction():
     tlg_group_id = -1001688539638
     xx = await extract_messages(chat_id=tlg_group_id, limit=1000000)
     df = pd.DataFrame.from_dict(xx)
-    df.to_parquet(f'chat{tlg_group_id}.parquet.gzip', compression='gzip')
+    df.to_parquet(f'chat{tlg_group_id}.parquet.gzip', compression='gzip', partition_cols=[partitioning_column])
     # print(xx)
     
 
