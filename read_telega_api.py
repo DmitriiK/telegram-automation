@@ -17,7 +17,7 @@ api_id = os.getenv('TELEGRAM_API_ID')
 api_hash = os.getenv('TELEGRAM_API_HASH')
 
 client = TelegramClient('anon', api_id, api_hash, system_version='4.16.30-vxDKLMN')
-# need to specify any value for system_version, othervise you'll loose all you other sessions on all devices
+# need to specify any value for system_version, othervise you'll loose all your other sessions on all devices
 # https://github.com/LonamiWebs/Telethon/issues/4051
 
 
@@ -43,12 +43,12 @@ def __extract_message_data(msg) -> Dict:
     return mess_data
 
 
-def extract_messages(chat_id: int, limit: int = 1000, min_id: int = 0) -> List[Dict]:
+def extract_messages(chat_id: int,  min_id: int = 0) -> List[Dict]:
     ret = []
     msg_dt, cnt_by_dt, cnt_all = None, 0, 0
     logging.info(f'started at {datetime.datetime.now()}')
     with client:
-        for msg in client.iter_messages(chat_id,  wait_time=1, limit=limit, min_id=min_id):
+        for msg in client.iter_messages(chat_id,  wait_time=1,  min_id=min_id, limit=500000):
             if not msg.from_id or not msg.message:
                 continue
             if msg.date.date() != msg_dt and msg_dt:
@@ -63,30 +63,24 @@ def extract_messages(chat_id: int, limit: int = 1000, min_id: int = 0) -> List[D
     return ret
 
 
-def extract_to_parquet(tlg_group_id: int):    
-    xx = extract_messages(chat_id=tlg_group_id, limit=1000)
-    df = pd.DataFrame.from_dict(xx)
-    file_name = f'chat{tlg_group_id}.parquet.gzip'
-    df.to_parquet(file_name, compression='gzip', engine='fastparquet')
-    # , partition_cols=[partitioning_column]
-    # print(xx)
+def lst_of_dict_to_parquet(di_itms: List[Dict], file_path: str, append: bool = True):
+    df = pd.DataFrame.from_dict(di_itms)
+    df.to_parquet(file_path, compression='gzip', engine='fastparquet', partition_cols=[partitioning_column],
+                  append=append)
 
 
-def append_to_parquet(tlg_group_id: int):
-    file_name = f'chat{tlg_group_id}.parquet.gzip'
+def extract_to_parquet(tlg_group_id: int, file_path: str, is_incremental: bool = False):
+    max_id = 0  # max existing id in file
+    if is_incremental:
+        max_id = check_max_id(file_path)+1
+        logging.info(f'extracting messages from  {max_id=} ')
+    di_itms = extract_messages(chat_id=tlg_group_id,  min_id=max_id)
+    logging.info(f'extracted {len(di_itms)} messages')
+    if di_itms:
+        lst_of_dict_to_parquet(di_itms, file_path, append=is_incremental)
+
+
+def check_max_id(file_path: str):
     id_col = 'msg_id'
-    df = pd.read_parquet(file_name, columns=[id_col])
-    max_id = df[id_col].max()
-    new_msgs = extract_messages(chat_id=tlg_group_id, limit=1000000, min_id=max_id+1)
-    if new_msgs:
-        df = pd.DataFrame.from_dict(new_msgs)
-        print(f'{df.shape=}')
-        df.to_parquet(file_name, engine='fastparquet', append=True)
-
-
-if __name__ == "__main__":
-    tlg_group_id = -1001688539638
-    extract_to_parquet(tlg_group_id)
-
-
-# %%
+    df = pd.read_parquet(file_path, columns=[id_col])
+    return df[id_col].max()
