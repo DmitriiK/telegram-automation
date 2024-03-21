@@ -43,6 +43,19 @@ def __extract_message_data(msg) -> Dict:
     return mess_data
 
 
+def extract_participants(chat_id: int) -> List[Dict]:
+    atrs = [  # attributes to be extracted
+            ('id', lambda x: x.id),
+            ('username', lambda x: x.username),
+            ('first_name', lambda x: x.first_name)
+            ]
+    with client:
+        ret = [{atr[0]: atr[1](usr) for atr in atrs}
+               for usr in client.iter_participants(chat_id)]
+        logging.info(f'extracted {len(ret)} users.')
+    return ret
+
+
 def extract_messages(chat_id: int,  min_id: int = 0) -> List[Dict]:
     ret = []
     msg_dt, cnt_by_dt, cnt_all = None, 0, 0
