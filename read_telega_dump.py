@@ -34,14 +34,8 @@ def __extract_message_data(msg):
     return mess_data
 
 
-
-# %%
-if __name__ == "__main__":
-    dump_path = r"D:\test_data\ChatExport_2024-03-14\result.json"
-    df = telega_dump_to_pandas(dump_path=dump_path)
     
 
-# %%
-df
+# %%df
 
 # %%
