@@ -56,6 +56,13 @@ def extract_participants(chat_id: int) -> List[Dict]:
     return ret
 
 
+def dump_participants(tlg_group_id: int, file_path: str):
+    dd = extract_participants(tlg_group_id)
+    with open(file_path, "w",  encoding="utf-8") as f:
+        strs = '\n'.join([str(x) for x in dd])
+        final = f'"chat_id": {tlg_group_id},\n "messages": [{strs}]'
+        f.write(final)
+
 def extract_messages(chat_id: int,  min_id: int = 0) -> List[Dict]:
     ret = []
     msg_dt, cnt_by_dt, cnt_all = None, 0, 0
