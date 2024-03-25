@@ -46,7 +46,7 @@ def __extract_message_data(msg) -> Dict:
 
 def extract_participants(chat_id: int) -> List[Dict]:
     atrs = [  # attributes to be extracted
-            ('id', lambda x: x.id),
+            ('user_id', lambda x: x.id),
             ('username', lambda x: x.username),
             ('first_name', lambda x: x.first_name)
             ]
@@ -58,6 +58,12 @@ def extract_participants(chat_id: int) -> List[Dict]:
 
 
 def dump_participants(tlg_group_id: int, file_path: str):
+    """
+     Retrieves list of participants from telegram group and saves it to file as json
+    Args:
+        tlg_group_id (int): telegram group or chat id
+        file_path (str): path to file for import
+    """
     dd = extract_participants(tlg_group_id)
     with open(file_path, "w",  encoding="utf-8") as f:
         final = json.dumps(dd, indent=2)

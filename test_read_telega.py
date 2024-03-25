@@ -1,10 +1,12 @@
 from read_telega_api import extract_to_parquet, extract_participants, dump_participants
 import json
+import pandas as pd
 
 
 def test_load_json():
-    with open(r'data\participats.json', 'r') as openfile:
-        return json.load(openfile)
+    dump_file = r'data\participants.json'
+    df = pd.read_json(dump_file)
+    print(df.head())
 
        
 if __name__ == "__main__":
@@ -12,7 +14,8 @@ if __name__ == "__main__":
     file_path = rf'data\chat{tlg_group_id}.parquet.gzip'
     # extract_to_parquet(tlg_group_id, file_path)
     # extract_to_parquet(tlg_group_id, file_path, True)
-    dump_participants(tlg_group_id, r'data\participats.json')
+    #dump_participants(tlg_group_id, r'data\participants.json')
+    test_load_json()
 # print(xx)
 
 
