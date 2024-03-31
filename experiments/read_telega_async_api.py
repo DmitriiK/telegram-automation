@@ -13,7 +13,7 @@ from telethon import TelegramClient
 from telethon.tl.functions.messages import GetMessagesReactionsRequest
 from telethon.tl.types import ReactionEmoji
 
-from custom_async import force_sync
+from experiments.custom_async import force_sync
 
 partitioning_column = 'msg_month_key'
 
